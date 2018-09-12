@@ -1,0 +1,100 @@
+arraySize EQU 100					; size of array, this is also the maximum prime candidate
+
+    .data
+    array1 dd arraySize dup(0)			; initialize array.
+    
+    .code
+
+start:
+   
+; ¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤
+
+    call main
+    inkey
+    exit
+
+; ¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤
+
+main proc
+
+    cls
+      
+    xor ecx, ecx					; Zero out counter
+ 
+   fillArrayLoop:					
+	   	mov eax, ecx				; Move counter value to eax
+	   	add eax, 2					; The sieve starts at 2, therefor add 2 to the loop counter
+	   	mov [array1+4*ecx], eax		; Insert value into array
+	   	inc ecx						; Increment counter
+	   	cmp ecx, arraySize			; 
+	   	jb fillArrayLoop				; Jump to loop start is we are not finished
+	   	
+	   	
+   	
+   	xor ecx, ecx					; Zero out counter
+   	loop1:							; This is out outer loop
+		mov ebx, ecx				; Prepare ebx to be used af counter in innerloop (loop2)
+		inc ebx						; Inner loop starts at ecx + 1
+	   	cmp [array1+4*ecx], -1		; Value discarded?
+	   	jne loop2					; if not jump to inner loop(loop2)
+	   	resume1:					; Resume point
+		inc ecx						; Increment out primary counter
+		cmp ecx, arraySize			; Are we done?
+		jb loop1					; If not jump to loop start.
+		jmp theEnd					; All done!
+
+	loop2:							; Inner loop
+		cmp [array1+4*ebx], -1		; Value discarded?
+		jne loop3					; if nor jump to loop3
+		resume2:					; Resumt point
+		inc ebx						; Increment inner loop counter
+		cmp ebx, arraySize			; Are we done?
+		jb loop2					; if not go to loop start.
+		jmp resume1					; Loop2 dont, return to loop1.
+		
+	loop3:							; Here we will test if it is a prime...
+		xor edx, edx				; Zero out edx
+		xor eax, eax				; Zero out eax
+		mov eax, [array1+4*ebx]		; Place the number we want to divite in eax
+		div [array1+4*ecx]			; Divide the numbe in eax with the value from outer loop
+		cmp edx, 0					; Check edx for remainder
+		je nukeIt					; If we have no remainder it the number in eax is not a prime
+									; therefore we nuke it. (set it to -1)
+		resume3:					; Resume point
+		jmp resume2					; Done, jump to resume point in loop2
+		
+				
+   	nukeIt:
+   	mov [array1+4*ebx], -1			; Not a prime, set it to -1
+   	jmp resume3						; Jump to resume point
+   	
+   	printArrayElement:				; Just printing all the primes.
+   		push ecx					; Preserve ecx
+   		print str$([array1+4*ecx]), 10, 13	; Using the masm32 print macro
+   		inc ebx						; Incrementing a counter used to store the number of primes.
+   		pop ecx						; Callback the preserved ecx
+   		jmp resumePrintArray		; Jump to resumepoint in print array.
+   		
+   	
+   theEnd: 							; exit point
+   	
+   	
+   	xor ecx, ecx					; Zero out.
+   	xor ebx, ebx					; Zero out.
+
+   	printArray:					
+   		cmp [array1+4*ecx], -1		; Check if we have a prime.
+   		jne printArrayElement		; If we have jump to printArrayElement.
+   		resumePrintArray:			; Resume point
+   		inc ecx						; Incrementing
+   		 cmp ecx, arraySize			; Are we done?
+   		jb printArray				; If not jump to printArray...
+
+	print "Number of primes below "
+	print str$(arraySize)
+	print ": "
+	print str$(ebx), 10, 13
+
+    ret
+
+main endp
